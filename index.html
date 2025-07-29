@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Workout</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      padding: 10px;
+      margin: 0;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    img {
+      max-width: 100%;
+      max-height: 300px;
+      width: auto;
+      height: auto;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto;
+      object-fit: contain;
+    }
+    .exercise-box {
+      background-color: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0px 0px 10px gray;
+      margin: 0 auto;
+      max-width: 500px;
+      width: 100%;
+    }
+    button {
+      margin: 10px 5px 0 5px;
+      padding: 10px 16px;
+      font-size: 16px;
+      border: none;
+      background-color: #28a745;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    progress {
+      width: 100%;
+      height: 18px;
+      margin-top: 15px;
+    }
+    #timer {
+      font-size: 16px;
+      margin-top: 10px;
+      color: #dc3545;
+    }
+    #total-time {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 20px;
+      }
+      button {
+        font-size: 14px;
+        padding: 8px 14px;
+      }
+      #timer, #total-time {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🏋️ My Workout</h1>
+
+  <div class="exercise-box">
+    <h2 id="exercise-name">Exercise Name</h2>
+    <img id="exercise-gif" src="" alt="Exercise" />
+    <p id="exercise-reps">Reps and Sets</p>
+    <progress id="progress" value="0" max="100"></progress>
+    <p id="timer">Rest: 0s</p>
+    <p id="total-time">Total Time: 0s</p>
+    <div>
+      <button onclick="prevExercise()">Previous</button>
+      <button onclick="nextExercise()">Next</button>
+    </div>
+  </div>
+
+  <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+  <script>
+    const exercises = [
+      { name: "Inchworm Push-up", file: "1 Inchworm push-up.gif", reps: "10 reps × 3 sets" },
+      { name: "Push-up", file: "2 Push up.gif", reps: "15 reps × 3 sets" },
+      { name: "Decline Push-up", file: "3 Decline Push-ups.gif", reps: "12 reps × 3 sets" },
+      { name: "Pull-up", file: "4 pull up.gif", reps: "Max reps × 3 sets" },
+      { name: "Dumbbell Rows", file: "5 Dumbbell Rows.gif", reps: "12 reps × 3 sets" },
+      { name: "Dumbbell Deadlifts", file: "6 Dumbbell Deadlifts.gif", reps: "12 reps × 3 sets" },
+      { name: "Squats", file: "7 Squat.gif", reps: "15 reps × 3 sets" },
+      { name: "Shoulder Press", file: "8 Shoulder Press.gif", reps: "12 reps × 3 sets" },
+      { name: "Lateral Raises", file: "9 Lateral Raises.gif", reps: "12 reps × 3 sets" },
+      { name: "Front Raises", file: "10 Front Raises.gif", reps: "12 reps × 3 sets" },
+      { name: "Bicep Curls", file: "11 Bicep Curls.gif", reps: "12 reps × 3 sets" },
+      { name: "Dumbbell Overhead Triceps", file: "12 Dumbbell Overhead Triceps.gif", reps: "12 reps × 3 sets" },
+      { name: "Triceps Dips", file: "13 Triceps Dips.gif", reps: "12 reps × 3 sets" },
+      { name: "Dumbbell Shrugs", file: "14 Dumbbell Shrugs.gif", reps: "15 reps × 3 sets" },
+      { name: "Dumbbell Wrist Curls", file: "15 Dumbbell Wrist Curls.gif", reps: "15 reps × 3 sets" },
+      { name: "Dumbbell Reverse Wrist Curls", file: "16 Dumbbell Reverse Wrist Curls.gif", reps: "15 reps × 3 sets" },
+      { name: "Gripper", file: "17 griper.gif", reps: "1 min × 2 sets" },
+      { name: "Crunches", file: "18 Crunches1.gif", reps: "15 reps × 3 sets" },
+      { name: "Leg Raises", file: "19 Leg Raises.gif", reps: "15 reps × 3 sets" },
+      { name: "Bicycle Crunches", file: "20 Bicycle Crunches.gif", reps: "20 reps × 3 sets" },
+      { name: "Plank", file: "21 plank.gif", reps: "45 sec × 3 sets" },
+      { name: "Plank to Pushup", file: "22 plank to pushup.gif", reps: "10 reps × 3 sets" },
+      { name: "Headstand", file: "23 head stand.gif", reps: "30 sec × 2 sets" },
+      { name: "Balayam", file: "24 balayam.jpeg", reps: "2–3 min daily" }
+    ];
+
+    let index = 0;
+    let restTime = 0;
+    let timerInterval;
+    let totalSeconds = 0;
+    let totalTimerInterval;
+
+    function showExercise() {
+      if(index >= exercises.length){
+        clearInterval(timerInterval);
+        clearInterval(totalTimerInterval);
+        document.getElementById("exercise-name").innerText = "🎉 Congratulations! Workout Complete!";
+        document.getElementById("exercise-gif").style.display = "none";
+        document.getElementById("exercise-reps").innerText = "";
+        document.getElementById("progress").value = 100;
+        document.getElementById("timer").innerText = "";
+        return;
+      }
+      const ex = exercises[index];
+      document.getElementById("exercise-name").innerText = ex.name;
+      document.getElementById("exercise-gif").style.display = "block";
+      document.getElementById("exercise-gif").src = ex.file;
+      document.getElementById("exercise-reps").innerText = ex.reps;
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const progressPercent = ((index + 1) / exercises.length) * 100;
+      document.getElementById("progress").value = progressPercent;
+    }
+
+    function startRestTimer() {
+      if(index >= exercises.length) return;
+      restTime = 30;
+      document.getElementById("timer").innerText = `Rest: ${restTime}s`;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        restTime--;
+        document.getElementById("timer").innerText = `Rest: ${restTime}s`;
+        if (restTime === 0) {
+          clearInterval(timerInterval);
+          document.getElementById("timer").innerText = "Start Now!";
+          document.getElementById("beep").play();
+        }
+      }, 1000);
+    } 
+
+    function nextExercise() {
+      index++;
+      showExercise();
+      startRestTimer();
+    }
+
+    function prevExercise() {
+      if(index > 0){
+        index--;
+        showExercise();
+        startRestTimer();
+      }
+    }
+
+    totalTimerInterval = setInterval(() => {
+      totalSeconds++;
+      document.getElementById("total-time").innerText = `Total Time: ${totalSeconds}s`;
+    }, 1000);
+
+    showExercise();
+    startRestTimer();
+  </script>
+
+</body>
+</html>
